@@ -74,10 +74,91 @@
 (class_definition
   name: (identifier) @type)
 (constructor_signature
+(dotted_identifier_list) @string
+
+; Methods
+; --------------------
+(super) @function
+
+; TODO: add method/call_expression to grammar and
+; distinguish method call from variable access
+(function_expression_body (identifier) @function)
+; ((identifier)(selector (argument_part)) @function)
+
+; NOTE: This query is a bit of a work around for the fact that the dart grammar doesn't
+; specifically identify a node as a function call
+(((identifier) @function (#match? @function "^_?[a-z]"))
+  . (selector . (argument_part))) @function
+
+; Annotations
+; --------------------
+(annotation
+  name: (identifier) @attribute)
+(marker_annotation
+  name: (identifier) @attribute)
+
+; Operators and Tokens
+; --------------------
+(template_substitution
+  "$" @punctuation.special
+  "{" @punctuation.special
+  "}" @punctuation.special
+) @none
+
+(template_substitution
+  "$" @punctuation.special
+  (identifier_dollar_escaped) @variable
+) @none
+
+(escape_sequence) @string.escape
+
+[
+ "@"
+ "=>"
+ ".."
+ "??"
+ "=="
+ "?"
+ ":"
+ "&&"
+ "%"
+ "<"
+ ">"
+ "="
+ ">="
+ "<="
+ "||"
+ (multiplicative_operator)
+ (increment_operator)
+ (is_operator)
+ (prefix_operator)
+ (equality_operator)
+ (additive_operator)
+] @operator
+
+[
+  "("
+  ")"
+  "["
+  "]"
+  "{"
+  "}"
+]  @punctuation.bracket
+
+; Delimiters
+; --------------------
+[
+  ";"
+  "."
+  ","
+] @punctuation.delimiter
+
+; Types
+; --------------------
+(class_definition
   name: (identifier) @type)
-;; TODO: does not work
-;(type_identifier
-  ;(identifier) @type)
+(constructor_signature
+  name: (identifier) @type)
 (scoped_identifier
   scope: (identifier) @type)
 (function_signature
@@ -90,7 +171,6 @@
   name: (identifier) @type)
 (enum_constant
   name: (identifier) @type)
-(type_identifier) @type
 (void_type) @type
 
 ((scoped_identifier
@@ -109,14 +189,15 @@
 (final_builtin) @constant.builtin
 
 ((identifier) @type
- (#match? @type "^_?[A-Z]"))
+ (#match? @type "^_?[A-Z].*[a-z]")) ; catch Classes or IClasses not CLASSES
 
 ("Function" @type)
 
 ; properties
-; TODO: add method/call_expression to grammar and
-; distinguish method call from variable access
 (unconditional_assignable_selector
+  (identifier) @property)
+
+(conditional_assignable_selector
   (identifier) @property)
 
 ; assignments
@@ -158,10 +239,17 @@
 ["import" "library" "export"] @include
 
 ; Reserved words (cannot be used as identifiers)
-; TODO: "rethrow" @keyword
 [
-    ; "assert"
+    ; TODO:
+    ; "rethrow" cannot be targeted at all and seems to be an invisible node
+    ; TODO:
+    ; the assert keyword cannot be specifically targeted
+    ; because the grammar selects the whole node or the content
+    ; of the assertion not just the keyword
+    ; assert
     (case_builtin)
+    "late"
+    "required"
     "extension"
     "on"
     "class"
@@ -170,10 +258,14 @@
     "in"
     "is"
     "new"
-    "return"
     "super"
     "with"
 ] @keyword
+
+[
+  "return"
+  "yield"
+] @keyword.return
 
 
 ; Built in identifiers:
@@ -183,7 +275,6 @@
     "as"
     "async"
     "async*"
-    "yield"
     "sync*"
     "await"
     "covariant"
@@ -206,7 +297,27 @@
 
 ; when used as an identifier:
 ((identifier) @variable.builtin
- (#vim-match? @variable.builtin "^(abstract|as|covariant|deferred|dynamic|export|external|factory|Function|get|implements|import|interface|library|operator|mixin|part|set|static|typedef)$"))
+ (#any-of? @variable.builtin
+          "abstract"
+          "as"
+          "covariant"
+          "deferred"
+          "dynamic"
+          "export"
+          "external"
+          "factory"
+          "Function"
+          "get"
+          "implements"
+          "import"
+          "interface"
+          "library"
+          "operator"
+          "mixin"
+          "part"
+          "set"
+          "static"
+          "typedef"))
 
 ["if" "else" "switch" "default"] @conditional
 
