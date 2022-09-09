@@ -214,6 +214,6 @@
 [submodule "repos/elisp"]
 	path = repos/elisp
 	url = https://github.com/Wilfred/tree-sitter-elisp.git
-  branch = master
-  update = none
-  ignore = dirty
+	branch = master
+	update = none
+	ignore = dirty
